@@ -9,13 +9,13 @@ import matplotlib
 import matplotlib.tri as tri
 from MITgcmutils import mds
 from xmitgcm import open_mdsdataset
-import pyresample
+#mport pyresample
 import sys 
-sys.path.append("/home/hay/Research/python/plotting/mitgcm_vis")
+sys.path.append("/home6/hhay/mitgcm_vis")
 from project_velocity import project_velocity, interpolate_data
 import os
 from matplotlib.ticker import FormatStrFormatter
-
+import time
 
 matplotlib.rcParams['axes.unicode_minus'] = False
 matplotlib.rcParams['axes.linewidth'] = 0.5
@@ -23,32 +23,50 @@ matplotlib.rc('image', cmap='coolwarm')
 
 iter = int(sys.argv[1])
 
-var_list = ['U', 'V', 'XC', 'YC', 'RC', 'W', 'CS', 'SN', 'Eta', 'XG', 'YG']
+def get_data(name, iter=None):
+   if iter is None:
+     return mds.rdmds(name)
+   else: 
+     return mds.rdmds(name, iter)
 
-ds = open_mdsdataset('.', prefix=var_list, iters=iter, geometry='curvilinear', ignore_unknown_vars=True, default_dtype=np.float)
+var_list = ['U', 'V', 'XC', 'YC', 'RC', 'W', 'CS', 'SN']
 
-XC = np.array(ds.XC)
-YC = np.array(ds.YC)
-XG = np.array(ds.XG)
-YG = np.array(ds.YG)
+#ds = open_mdsdataset('.', prefix=var_list, iters=iter, geometry='curvilinear',llc_method="smallchunks", ignore_unknown_vars=True, default_dtype=np.float)
 
-Eta = np.array(ds.Eta)
-RC = -mds.rdmds('RC').flatten()
-#print(RC)
+#print(type(ds.XC))
 
-triang = tri.Triangulation(XC.flatten(), YC.flatten())
+XC = get_data('XC')
+YC = get_data('YC')
+#XG = #ds.XG.data
+#YG = #ds.YG.data
 
-U = np.array(ds.U)[0,:,:,:]*100
-V = np.array(ds.V)[0,:,:,:]*100
-W = np.array(ds.W)[0,:,:,:]*100
-Eta = Eta[0,:,:]
+#Eta = ds.Eta.data
+#print(ds)
+
+#RC = #-ds.Z.data
+ 
+#riang = tri.Triangulation(XC.flatten(), YC.flatten())
+start = time.time()
+U = get_data('U', iter)*100
+#V = get_data('V', iter)*100
+#W = get_data('W', iter)*100
+end = time.time()
+print(end-start)
+sys.exit()
+
+#U = mds.rdmds('U',iter)[:,:,:]*100
+#V= mds.rdmds('V',iter)[:,:,:]*100
+#W = mds.rdmds('W',iter)[:,:,:]*100
+
+#Eta = Eta[0,:,:]
 Us = U[0,:,:]
 Vs = V[0,:,:]
-print(Eta.shape, Us.shape)
 
+print("VEL TYPE", type(U))
+print(U)
 
-CS = np.array(ds.CS)
-SN = np.array(ds.SN)
+CS = ds.CS.data
+SN = ds.SN.data
 
 hres = 1.0                                                                              
 lon = np.arange(-180, 180.01, hres) #+ hres/2 
@@ -59,9 +77,38 @@ U, V = project_velocity(U, V, CS, SN)
 
 Us, Vs = project_velocity(Us, Vs, CS, SN)
 
-U = interpolate_data(U, XC, YC, lon_out, lat_out)
-W = interpolate_data(W, XC, YC, lon_out, lat_out)
-V = interpolate_data(V, XC, YC, lon_out, lat_out)
+print(np.shape(U), np.shape(XC), np.shape(YC), np.shape(RC) )
+
+
+
+#RR, XX, YY = np.meshgrid(RC, XC, YC)
+
+Ui = np.zeros((len(RC), len(lat), len(lon)))
+Vi = np.zeros((len(RC), len(lat), len(lon)))
+Wi = np.zeros((len(RC), len(lat), len(lon)))
+
+inds = interpolate_data(U[0], XC, YC, lon_out, lat_out)[1]
+inds = np.unravel_index(inds, U[0].shape)
+
+print("GEtting vals", inds[0], inds[1], U.shape)
+
+Ui = U.vindex[:, inds[0], inds[1]]
+Ui = Ui.reshape(len(RC), len(lat), len(lon))
+Vi = V.vindex[:, inds[0], inds[1]]
+Vi = Vi.reshape(len(RC), len(lat), len(lon))
+print(inds[0], inds[1])
+print(len(inds[0]), len(inds[1]))
+import dask
+Ui = Ui.compute()
+Vi = Vi.compute()
+print("Vals retrieved", Ui.shape,Vi.shape, lon_out.shape)
+
+#plt.contourf(Ui[0])
+#plt.gcf().savefig("test.png")
+sys.exit()
+U = Ui #Ud.compute()
+V = Vi
+W = Wi
 #Eta = interpolate_data(Eta, XC, YC, lon_out, lat_out)
 r_slice = 0
 lon_slice = 90
@@ -70,14 +117,14 @@ lat_slice = 90
 #Vs = V[r_slice, :, :]
 #Umap = interpolate_data(Umap, XC, YC, lon_out, lat_out)
 
-print(U.shape)
+#print(U.shape)
 
 
 #U = U[:, :, 0]
 #W = W[:, :, 0]
 #V = V[:, :, 0]
 
-
+sys.exit()
 Umin = min( np.amin(Us), np.amin(U) )
 Umax = max( np.amax(Us), np.amax(U) )
 Vmin = min( np.amin(Vs), np.amin(V) )
