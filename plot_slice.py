@@ -268,9 +268,9 @@ ax9.set_aspect('equal')
 #filter = True
 #if filter:
 from sh_filter import sh_filter
-Usf = sh_filter(Us, XG, YG, lmax=18)
-Vsf = sh_filter(Vs, XG, YG, lmax=18)
-Etaf = sh_filter(Eta, XC, YC, lmax=18)
+Usf = sh_filter(Us, XG, YG, lmax=8)
+Vsf = sh_filter(Vs, XG, YG, lmax=8)*-1
+Etaf = sh_filter(Eta, XC, YC, lmax=8)
 lonf = np.linspace(-180, 180, len(Etaf[0]))
 latf = np.linspace(-90, 90, len(Etaf))
 
@@ -302,8 +302,8 @@ c = ax9.contourf(lonf, latf, Vsf)
 c6 = plt.colorbar(c, ax=ax9, shrink=0.8, orientation='horizontal')
 
 
-skip = 2
-ax7.quiver(lonf[::skip], latf[::skip], Usf[::skip,::skip], Vsf[::skip,::skip], color='w')
+skip = 5
+#ax7.quiver(lonf[::skip], latf[::skip], Usf[::skip,::skip], Vsf[::skip,::skip], color='w')
 #ax4.quiver(XC, YC, Us, Vs, color='w',scale=2000)
 
 #ax4.set_xlim([-100, -75])
@@ -333,8 +333,8 @@ c5.ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
 #c2 = ax2.contourf(Umap)
 #plt.colorbar(c, ax=ax1, orientation='horizontal')
 #plt.colorbar(c2,ax=ax2, orientation='horizontal')
-fig.savefig("slice_test.pdf")
+fig.savefig("slice_test.png",dpi=300)
 
 
 
-os.system("echo 'plot' | mailx -s 'plot from plot_slice.py' -A slice_test.pdf hamish.hay@jpl.nasa.gov")
+os.system("echo 'plot' | mailx -s 'plot from plot_slice.py' -A slice_test.png hamish.hay@jpl.nasa.gov")
