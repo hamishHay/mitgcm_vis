@@ -34,6 +34,8 @@ CS = mds.rdmds('AngleCS')
 SN = mds.rdmds('AngleSN')
 
 U = mds.rdmds('U', np.inf)
+V = mds.rdmds('V', np.inf)
+U, V = project_velocity(U, V, CS, SN)
 
 hres = 1.0
 lon = np.arange(-180, 180.01, hres) #+ hres/2
@@ -46,10 +48,10 @@ Ui = np.zeros((len(RC), len(lat), len(lon)))
 Vi = np.zeros((len(RC), len(lat), len(lon)))
 Wi = np.zeros((len(RC), len(lat), len(lon)))
 
-inds = interpolate_data(U[0], XC, YC, lon_out, lat_out)[1]
-inds = np.unravel_index(inds, U[0].shape)
-
-indx, indy = inds
+indx, indy, tshape = interpolate_data(U[0], XC, YC, lon_out, lat_out)[1:]
+#inds = np.unravel_index(inds, U[0].shape)
+#print()
+#indx, indy = np.unravel_index(inds, XC.shape )
 
 def get_data(name, iter=None):
    if iter is None:
@@ -62,19 +64,20 @@ grp = f.create_group('DATA')
 
 read_list = ["T", "W"]
 
-iters=[26496]
+iters=[10]
 
+print(indx, indy)
 for dname in read_list:
-  dset = grp.create_dataset(dname,(len(iters), nrt, nxt, nyt), chunks=True, dtype=np.float32)
+  dset = grp.create_dataset(dname,(len(iters), nrt, nyt, nxt), chunks=True, dtype=np.float32)
   cnt = 0
   for iter in iters:
     start = time.time()
-    data = get_data(dname, iter)
+    data = get_data(dname, iter)#.reshape((nrt, XC.size))
     end = time.time()
     print("Load time: ", end-start)
 
     start = time.time()
-    data_near = data[:, indx, indy].reshape((nrt,nxt,nyt))
+    data_near = data[:, indx, indy].reshape((nrt,nyt,nxt))
     end = time.time()
 
 
@@ -86,17 +89,20 @@ for dname in read_list:
 
     
 
-dset_u = grp.create_dataset("U",(len(iters), nrt, nxt, nyt), chunks=True, dtype=np.float32)
-dset_v = grp.create_dataset("V",(len(iters), nrt, nxt, nyt), chunks=True, dtype=np.float32)
+dset_u = grp.create_dataset("U",(len(iters), nrt, nyt, nxt), chunks=True, dtype=np.float32)
+dset_v = grp.create_dataset("V",(len(iters), nrt, nyt, nxt), chunks=True, dtype=np.float32)
 cnt = 0
 for iter in iters:
   U = get_data("U", iter)
   V = get_data("V", iter)
     
   U, V = project_velocity(U, V, CS, SN)
+ 
+  #U = U.reshape((nrt, XC.size))
+  #V = V.reshape((nrt, XC.size))
 
-  U_near = U[:, indx, indy].reshape((nrt,nxt,nyt))
-  V_near = V[:, indx, indy].reshape((nrt,nxt,nyt))  
+  U_near = U[:, indx, indy].reshape((nrt,nyt,nxt))
+  V_near = V[:, indx, indy].reshape((nrt,nyt,nxt))  
 
   dset_u[cnt, :, :, :] = U_near
   dset_v[cnt, :, :, :] = V_near

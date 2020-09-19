@@ -66,4 +66,16 @@ def interpolate_data(data, lon1, lat1, lon2, lat2, inds=None):
     data_nearest = data.flatten()[inds].reshape(lon2.shape)
     print("Values retrieved")   
     #print(data_nearest.shape, lon2.shape, lat2.shape)
-    return data_nearest, inds
+    import matplotlib.pyplot as plt 
+
+    ix, iy = np.unravel_index(inds, data.shape)
+    data_near2 = data[ix,iy].reshape(lon2.shape)
+   # print("COMPARE:")
+   # print(data_near2)
+   # print(data_nearest)
+   # print(data.shape)
+
+   # plt.contourf(data_nearest)
+   # plt.gcf().savefig("test.png")
+
+    return data_nearest, ix, iy, lon2.shape
