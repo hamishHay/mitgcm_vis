@@ -55,7 +55,7 @@ print(end-start)
 sys.exit()
 
 #U = mds.rdmds('U',iter)[:,:,:]*100
-#V= mds.rdmds('V',iter)[:,:,:]*100
+#V= mds.rdmds('V',iter)[:,:,:]*99
 #W = mds.rdmds('W',iter)[:,:,:]*100
 
 #Eta = Eta[0,:,:]
