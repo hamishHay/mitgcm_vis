@@ -35,24 +35,29 @@ var_list = ['U', 'V', 'XC', 'YC', 'RC', 'W', 'CS', 'SN']
 
 #print(type(ds.XC))
 
+DO = 2*np.pi/351000. * 100e3
+
 XC = get_data('XC')
 YC = get_data('YC')
-#XG = #ds.XG.data
-#YG = #ds.YG.data
+XG = get_data('XG')
+YG = get_data('YG')
 
 #Eta = ds.Eta.data
 #print(ds)
 
-#RC = #-ds.Z.data
+RC = get_data('RC')
  
-#riang = tri.Triangulation(XC.flatten(), YC.flatten())
+triang = tri.Triangulation(XC.flatten(), YC.flatten())
 start = time.time()
-U = get_data('U', iter)*100
-#V = get_data('V', iter)*100
-#W = get_data('W', iter)*100
+U = get_data('U',iter)
+V = get_data('V',iter)
+W = get_data('W',iter)
+Eta = get_data('Eta',iter)
 end = time.time()
 print(end-start)
-sys.exit()
+#sys.exit()
+
+print(U.shape)
 
 #U = mds.rdmds('U',iter)[:,:,:]*100
 #V= mds.rdmds('V',iter)[:,:,:]*100
@@ -65,10 +70,10 @@ Vs = V[0,:,:]
 print("VEL TYPE", type(U))
 print(U)
 
-CS = ds.CS.data
-SN = ds.SN.data
+CS = get_data("AngleCS")
+SN = get_data("AngleSN")
 
-hres = 1.0                                                                              
+hres = 0.5                                                                              
 lon = np.arange(-180, 180.01, hres) #+ hres/2 
 lat = np.arange(-90, 90.01, hres) #+ hres/2
 lon_out, lat_out = np.meshgrid(lon, lat)
@@ -83,32 +88,50 @@ print(np.shape(U), np.shape(XC), np.shape(YC), np.shape(RC) )
 
 #RR, XX, YY = np.meshgrid(RC, XC, YC)
 
-Ui = np.zeros((len(RC), len(lat), len(lon)))
-Vi = np.zeros((len(RC), len(lat), len(lon)))
-Wi = np.zeros((len(RC), len(lat), len(lon)))
+#Ui = np.zeros((len(RC), len(lat), len(lon)))
+#Vi = np.zeros((len(RC), len(lat), len(lon)))
+#Wi = np.zeros((len(RC), len(lat), len(lon)))
 
-inds = interpolate_data(U[0], XC, YC, lon_out, lat_out)[1]
-inds = np.unravel_index(inds, U[0].shape)
+indx, indy, tshape = interpolate_data(U[0], XC, YC, lon_out, lat_out)[1:]
+print(indx, indy, tshape)
+#inds = np.unravel_index(inds, U[0].shape)
 
-print("GEtting vals", inds[0], inds[1], U.shape)
+#print("GEtting vals", inds[0], inds[1], U.shape)
 
-Ui = U.vindex[:, inds[0], inds[1]]
-Ui = Ui.reshape(len(RC), len(lat), len(lon))
-Vi = V.vindex[:, inds[0], inds[1]]
-Vi = Vi.reshape(len(RC), len(lat), len(lon))
-print(inds[0], inds[1])
-print(len(inds[0]), len(inds[1]))
-import dask
-Ui = Ui.compute()
-Vi = Vi.compute()
-print("Vals retrieved", Ui.shape,Vi.shape, lon_out.shape)
+#Ui = U.vindex[:, inds[0], inds[1]]
+#Ui = Ui.reshape(len(RC), len(lat), len(lon))
+#Vi = V.vindex[:, inds[0], inds[1]]
+#Vi = Vi.reshape(len(RC), len(lat), len(lon))
+#print(inds[0], inds[1])
+#print(len(inds[0]), len(inds[1]))
+#import dask
+#Ui = Ui.compute()
+#Vi = Vi.compute()
+#print("Vals retrieved", Ui.shape,Vi.shape, lon_out.shape)
 
-#plt.contourf(Ui[0])
+Wi = np.zeros((58, lat.size, lon.size))
+
+#for i in range(58):
+U = U[:, indx, indy].reshape((58, lat.size, lon.size))
+V = V[:, indx, indy].reshape((58, lat.size, lon.size))
+W = W[:, indx, indy].reshape((58, lat.size, lon.size))
+
+#plt.tricontourf(triang, W[30].flatten()/DO, 11)
+
+#plt.contourf(np.mean(Wi, axis=-1)/DO, np.linspace(-0.4, 0.4, 201)*0.1)
+
+#plt.colorbar()
+
+#plt.gca().axis('off')
+
 #plt.gcf().savefig("test.png")
-sys.exit()
-U = Ui #Ud.compute()
-V = Vi
-W = Wi
+
+#os.system("echo 'plot' | mailx -s 'plot from plot_slice.py' -A test.png hamish.hay@jpl.nasa.gov")
+
+#sys.exit()
+#U = Ui #Ud.compute()
+#V = Vi
+#W = Wi
 #Eta = interpolate_data(Eta, XC, YC, lon_out, lat_out)
 r_slice = 0
 lon_slice = 90
@@ -124,7 +147,7 @@ lat_slice = 90
 #W = W[:, :, 0]
 #V = V[:, :, 0]
 
-sys.exit()
+#sys.exit()
 Umin = min( np.amin(Us), np.amin(U) )
 Umax = max( np.amax(Us), np.amax(U) )
 Vmin = min( np.amin(Vs), np.amin(V) )
@@ -232,9 +255,9 @@ r_min = np.amin(RC)
 
 RC = (R/Rb - 1.0) * ((RC - r_min) / (r_max - r_min)) + 1.0
 
-W = W[::-1, :]
-U = U[::-1, :]
-V = V[::-1, :]
+#W = W[::-1, :]
+#U = U[::-1, :]
+#V = V[::-1, :]
 
 print(Us[:,0], U[-1,:])
 
@@ -314,14 +337,15 @@ ax9.set_aspect('equal')
 
 #filter = True
 #if filter:
-from sh_filter import sh_filter
-Usf = sh_filter(Us, XG, YG, lmax=8)
-Vsf = sh_filter(Vs, XG, YG, lmax=8)*-1
-Etaf = sh_filter(Eta, XC, YC, lmax=8)
-lonf = np.linspace(-180, 180, len(Etaf[0]))
-latf = np.linspace(-90, 90, len(Etaf))
+print(Eta.shape, Us.shape)
+from sh_filter import sh_filter_LSQ
+lonf, latf, Usf = sh_filter_LSQ(Us, XG, YG, lmax=4)
+lonf, latf, Vsf = sh_filter_LSQ(Vs, XG, YG, lmax=4)#*-1
+lonf, latf, Etaf = sh_filter_LSQ(Eta, XC, YC, lmax=4)
+#lonf = np.linspace(-180, 180, len(Etaf[0]))
+#latf = np.linspace(-90, 90, len(Etaf))
 
-print(Etaf.shape)
+#print(Etaf.shape)
 
 c = ax4.tricontourf(triang, Eta.flatten(), cmap=plt.cm.viridis)
 c4 = plt.colorbar(c, ax=ax4, shrink=0.8, orientation='horizontal')
