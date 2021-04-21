@@ -44,8 +44,8 @@ fields = args.field
 
 data_file = h5py.File(args.file, 'r')
 
-fig = plt.figure(figsize=(15, 6*num_fields))
-gs = fig.add_gridspec(ncols=3, nrows=num_fields, width_ratios=[4,4,4])
+fig = plt.figure(figsize=(5*num_fields, 15))
+gs = fig.add_gridspec(ncols=num_fields, nrows=3)#, width_ratios=[4,4,4])
 
 R = 1550e3
 Rb = R - 100e3
@@ -68,18 +68,19 @@ for i in range(num_fields):
     x = x[:]
     y = y[:]
     
-    xl = 30
-    xh = 50
-    yl = 35
-    yh = 55
-    rl = -10e3
+    xl = -180#-10
+    xh = 180#10
+    yl = -90#-10
+    yh = 90#10
+    rl = 0
 
     xb = (np.abs(x - xl)).argmin()
     xt = (np.abs(x - xh)).argmin()
     yb = (np.abs(y - yl)).argmin()
     yt = (np.abs(y - yh)).argmin()
     rl = (np.abs(RC - rl)).argmin()
-    print(rl)
+
+    y_eq = (np.abs(y - 0.0)).argmin()
 
     data = data[:, yb:yt+1, xb:xt+1]
     x = x[xb:xt+1]
@@ -96,39 +97,43 @@ for i in range(num_fields):
 
 
     # map at const R level 
-    ax1 = fig.add_subplot(gs[i,0], projection=proj)#, projection=ccrs.Mollweide())
+    ax1 = fig.add_subplot(gs[0,i], projection=ccrs.Mollweide())
     ax1.set_title(fields[i] + ": depth = " + str(RC[rl]/1e3) + 'km')
-    ax1.pcolormesh(x, y, data[rl], cmap=cmap, vmin=-cval, vmax=cval)#, transform=ccrs.PlateCarree(), fast=True)
+    ax1.pcolormesh(x, y, data[rl], cmap=cmap, vmin=-cval, vmax=cval, transform=ccrs.PlateCarree(), shading="flat")#, fast=True)
     ax1.set_aspect('equal')
     
     
     # map at const lon 
-    ax2 = fig.add_subplot(gs[i,1])
+    ax2 = fig.add_subplot(gs[1,i])
     ax2.set_title(fields[i] + ": const lat")
     ax2.set_xlabel("Longitude")
     ax2.set_ylabel("Depth [km]")
 
     mean_val = abs(np.mean(data))
-    c2 = ax2.pcolormesh(x, RC/1e3, data[:,0,:], cmap=cmap, vmin=-cval, vmax=cval)#, vmin=-1, vmax=1)
+    c2 = ax2.pcolormesh(x, RC/1e3, data[:,y_eq,:], cmap=cmap, vmin=-cval, vmax=cval)#, vmin=-1, vmax=1)
+
+    print(data[5,y_eq,:])
 
     # ax2.set_xlim([40,50])
-    ax2.set_ylim([-30,0])
-    ax2.set_aspect(0.3)
+    # ax2.set_ylim([-30,0])
+    # ax2.set_aspect(0.3)
 
-    plt.colorbar(c2, orientation='horizontal', label='Velocity [m/s]')
+    
 
     # map at const lat
-    ax3 = fig.add_subplot(gs[i,2])
+    ax3 = fig.add_subplot(gs[2,i])
     ax3.set_title(fields[i] + ": const lon")
     ax3.set_xlabel("Latitude")
     ax3.set_ylabel("Depth [km]")
 
     mean_val = abs(np.mean(data))
-    ax3.pcolormesh(y, RC/1e3, data[:,:,0], cmap=cmap, vmin=-cval, vmax=cval)
+    c3 = ax3.pcolormesh(y, RC/1e3, data[:,:,0], cmap=cmap, vmin=-cval, vmax=cval)
 
     # ax3.set_xlim([40,50])
-    ax3.set_ylim([-30,0])
-    ax3.set_aspect(0.3)
+    # ax3.set_ylim([-30,0])
+    # ax3.set_aspect(0.3)
+
+    plt.colorbar(c3, orientation='horizontal', label='Velocity [m/s]')
 
     # (4) Projected map view at depth 
     # ax5 = fig.add_subplot(gs[2*i+1,2], projection=proj)
@@ -143,5 +148,5 @@ for i in range(num_fields):
 # with open('myplot.pkl','wb') as fid:
 #     pickle.dump(fig, fid)
 # os.system("echo 'plot' | mailx -s 'plot from plot_field.py' -A myplot.pkl hamish.hay@jpl.nasa.gov")
-fig.savefig("field_plot.png",dpi=500, bbox_inches='tight')
-os.system("echo 'plot' | mailx -s 'plot from plot_field.py' -A field_plot.png hamish.hay@jpl.nasa.gov")
+fig.savefig("/home/hay/Research/SyncFolder/field_plot.png",dpi=500)#, bbox_inches='tight')
+# os.system("echo 'plot' | mailx -s 'plot from plot_field.py' -A field_plot.png hamish.hay@jpl.nasa.gov")

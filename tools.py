@@ -13,6 +13,9 @@ from xmitgcm import open_mdsdataset
 from project_velocity import project_velocity
 from interpolation import interpolate_data
 import h5py
+import xarray as xr
+
+grid_dir = "/home/hay/Research/EuropaOceanDynamics/MITgcm_grids/cs510/"
 
 def convert_diagnostics(file_in, field_name, vectors=[], res=0.1, iter=20329):
     def load_data(name, rec=None, iter=20329):
@@ -24,7 +27,12 @@ def convert_diagnostics(file_in, field_name, vectors=[], res=0.1, iter=20329):
 
     field_num = len(field_keys)
 
-    RAC = mds.rdmds('RAC')
+    # RAC = mds.rdmds('RAC')
+
+    grid = xr.open_dataset(grid_dir)
+    print(grid)
+
+    RAC = grid.RAC.values
 
     data_field = []
     cnt = 0
@@ -39,6 +47,9 @@ def convert_diagnostics(file_in, field_name, vectors=[], res=0.1, iter=20329):
     if len(vectors) > 0:
         CS = mds.rdmds('AngleCS')
         SN = mds.rdmds('AngleSN')
+
+        RAC = grid.RAC.values
+        RAC = grid.RAC.values
 
         for i in range(len(vectors)):
             c1 = vectors[i][0] # Vector component one
@@ -104,8 +115,8 @@ def convert_output(field_names, file_out, vectors=[], res=0.1, iters=20329):
 
     # If there are any lat-lon vectors, rotate them to be EW-NS
     if len(vectors) > 0:
-        CS = mds.rdmds('AngleCS')
-        SN = mds.rdmds('AngleSN')
+        CS = mds.rdmds(grid_dir + 'AngleCS')
+        SN = mds.rdmds(grid_dir + 'AngleSN')
 
         for i in range(len(vectors)):
             c1 = vectors[i][0] # Vector component one
@@ -118,9 +129,9 @@ def convert_output(field_names, file_out, vectors=[], res=0.1, iters=20329):
     lon_out, lat_out = np.meshgrid(lon, lat)
 
     # Load input grid
-    XC = mds.rdmds('XC')
-    YC = mds.rdmds('YC')
-    RC = mds.rdmds('RC')
+    XC = mds.rdmds(grid_dir + 'XC')
+    YC = mds.rdmds(grid_dir + 'YC')
+    RC = mds.rdmds(grid_dir + 'RC')
 
     # Define sizes of target grid dimensions
     nrt, nxt, nyt = (len(RC), len(lon), len(lat))
@@ -192,11 +203,28 @@ if __name__=="__main__":
     # convert_diagnostics(file_in, field_names, vectors, 0.1, iter=20329)
 
     # Example 2: open raw data file
-    iters = 50000
+    iters = 8000
     field_names = ["U", "V", 'W']
     vectors = [[0,1]]
     file_out = "UVW_" +str(iters)+ ".h5"
 
-    convert_output(field_names, file_out, vectors=vectors, iters=iters, res=0.5)
+    convert_output(field_names, file_out, vectors=vectors, iters=iters, res=0.2)
 
+
+    # ---------------------------------------------
+    # Example: 1 iteration of the diagnostics file:
+    # file_in = "diagnostics_3D_transport"
+
+    # # Define the fields and their indexes
+    # #                Name    :indx
+    # field_names = {'UVELMASS':0,
+    #                'VVELMASS':1}
+
+    # # Define the list of vectors, if any, that need 
+    # # to be rotated to the correct coord system:
+    # # Here, [0, 1] is ADVx_TH and ADVy_TH, which
+    # # will be used together to perform the rotation
+    # vectors = [[0, 1]]
+
+    # convert_diagnostics(file_in, field_names, vectors, 0.1, iter=20329)
 

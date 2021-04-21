@@ -9,6 +9,10 @@ def project_velocity(U, V, CS, SN):
       Umap = U*CS[None, : :] - V*SN[None, :, :]
       Vmap = U*SN[None, :,:] + V*CS[None, :, :]
 
+    else:
+      Umap = U*CS - V*SN
+      Vmap = U*SN + V*CS 
+
     return Umap, Vmap
 
 

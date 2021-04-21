@@ -167,11 +167,11 @@ R = 1550e3
 Rb = 1450e3
 Rb= R - 100e3
 
-def get_slice_axes(fig, num):
+def get_slice_axes(fig, num, lat1=-90., lat2=90., shrink=1.0):
 
   tr_rotate = Affine2D().translate(0, 90)
   # set up polar axis
-  tr = PolarAxes.PolarTransform() #+ tr_rotate
+  tr = PolarAxes.PolarTransform() + tr_rotate
 
   angle_ticks = [(np.radians(i), str(i)) for i in np.arange(80, -81, -10) ]
 # angle_ticks = [(np.radians(80), r"$80$"), 
@@ -202,8 +202,10 @@ def get_slice_axes(fig, num):
 # the grid for the r axis
 # the tick formatting for the theta axis
 # the tick formatting for the r axis
+  lat1 = np.radians(lat1)
+  lat2 = np.radians(lat2)
   grid_helper = floating_axes.GridHelperCurveLinear(tr,
-                                                  extremes=(-np.pi/2, np.pi/2, R/Rb, 1),
+                                                  extremes=(-lat1, lat2, R/Rb*shrink, 1*shrink),
                                                   grid_locator1=grid_locator1,
                                                   grid_locator2=grid_locator2,
                                                   tick_formatter1=tick_formatter1,

@@ -7,8 +7,51 @@ import matplotlib.pyplot as plt
 from matplotlib.transforms import Affine2D
 import matplotlib
 
+from matplotlib.patches import ConnectionPatch
+from matplotlib.projections import get_projection_class
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-def get_slice_axes(fig, num, R, Rb, gs=None):
+def get_polar_inset(fig, ax, th1, th2, rt, rb, x=0.0, y=0.0, scale="25%"):
+    axins = inset_axes(ax, width=scale, height=scale, 
+                       axes_class=get_projection_class("polar"), 
+                       borderpad=0, 
+                       bbox_to_anchor=(x,y,1,1), 
+                       bbox_transform=ax2.transAxes)
+    
+    axins.set_thetamin(th1)
+    axins.set_thetamax(th2)
+    axins.set_zorder(20)
+    axins.set_ylim( [rb, rt] )
+    axins.set_rorigin(0)
+    
+    axins.grid(False,which='both')
+    axins.tick_params(labelleft=False, labelright=False,
+                labeltop=False, labelbottom=False)
+
+    
+    coords = [(th2, rt), (th1, rt), (th2, rb), (th1, rb)]
+    for xl, yl in coords:
+        xl = np.radians(xl)
+        con = ConnectionPatch(xyA=(xl, yl), coordsA='data', axesA=ax,
+                        xyB=(xl, yl), coordsB='data', axesB=axins, alpha=0.7)
+        con.set_color([0, 0, 0])
+        fig.add_artist(con)
+        con.set_linewidth(0.5)
+
+    angles = np.radians(np.linspace(th1, th2, 101))
+    upper_r = np.ones(101)*rt
+    lower_r = np.ones(101)*rb
+
+    angles = np.concatenate( (angles, angles[::-1]) )
+    rvals = np.concatenate(  (upper_r, lower_r) )
+
+    ax.fill(angles, rvals, color='C1', alpha = 1, facecolor="none",zorder=1e8, lw=1.2)
+
+    return axins
+
+
+
+def get_slice_axes(fig, num, R, Rb, gs=None, lat1=-90.0, lat2=90.0, shrink=1.0):
 
   tr_rotate = Affine2D().translate(0, 90)
   # set up polar axis
@@ -28,9 +71,9 @@ def get_slice_axes(fig, num, R, Rb, gs=None):
 
 
 # set up grid spacing along the 'radius'
-  radius_ticks = [(1., ''),
+  radius_ticks = [(Rb, ''),
                 # (1.5, '%i' % (MAX_R/2.)),
-                (R/Rb, '')]
+                (R, '')]
 
   grid_locator2 = FixedLocator([v for v, s in radius_ticks])
   tick_formatter2 = DictFormatter(dict(radius_ticks))
@@ -43,8 +86,10 @@ def get_slice_axes(fig, num, R, Rb, gs=None):
 # the grid for the r axis
 # the tick formatting for the theta axis
 # the tick formatting for the r axis
+  l1 = np.radians(lat1)
+  l2 = np.radians(lat2)
   grid_helper = floating_axes.GridHelperCurveLinear(tr,
-                                                  extremes=(-np.pi/2, np.pi/2, R/Rb, 1),
+                                                  extremes=(l1, l2, R, Rb),
                                                   grid_locator1=grid_locator1,
                                                   grid_locator2=grid_locator2,
                                                   tick_formatter1=tick_formatter1,

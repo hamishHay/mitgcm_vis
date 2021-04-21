@@ -37,9 +37,9 @@ def interpolate_data(data, lon1, lat1, lon2, lat2, inds=None):
     data_nearest = data.flatten()[inds].reshape(lon2.shape)
     print("Values retrieved")   
     #print(data_nearest.shape, lon2.shape, lat2.shape)
-    import matplotlib.pyplot as plt 
+    # import matplotlib.pyplot as plt 
 
     ix, iy = np.unravel_index(inds, data.shape)
-    data_near2 = data[ix,iy].reshape(lon2.shape)
+    # data_near2 = data[ix,iy].reshape(lon2.shape)
     
     return data_nearest, ix, iy, lon2.shape
